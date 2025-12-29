@@ -1,7 +1,13 @@
 /**
  * Service to handle Stop ID to Name mapping.
- * In a real application, this would call the TDX Bus Stop API.
- * For this demo, we simulate it with a dictionary of stops observed in the Route 307/262 data.
+ * 
+ * [FUTURE INTEGRATION]:
+ * To get real-time Stop Names and Locations, you should integrate the TDX API.
+ * API: https://tdx.transportdata.tw/api-service/swagger
+ * Endpoint: /v2/Bus/StopOfRoute/City/Taipei
+ * 
+ * Current Implementation:
+ * Uses a static dictionary for demo purposes (Route 307/262).
  */
 
 // Sample data mined from common Taipei bus routes
@@ -36,5 +42,6 @@ const stopCache = {
  */
 export const getStopName = (stopId) => {
     if (!stopId) return '';
-    return stopCache[stopId] || `${stopId} (站名未知)`;
+    return stopCache[stopId] || `${stopId}`;
 };
+
