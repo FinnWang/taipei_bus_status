@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react'
 import './index.css' // Import first
 import './App.css'   // Import app specific overrides
 import { fetchBusData } from './services/api'
+import { fetchBusLocations } from './services/tdxApi' // [NEW]
 import ControlPanel from './components/ControlPanel'
 import BusTable from './components/BusTable'
+import BusMap from './components/BusMap' // [NEW]
 import DashboardCharts from './components/DashboardCharts'
 import { getRouteName } from './services/routeService'
 import { getProviderName, normalizeSearchText } from './utils/formatters'
 
 function App() {
-  const [data, setData] = useState([])
+  const [data, setData] = useState([]) // Crowding Data
+  const [locations, setLocations] = useState([]) // [NEW] TDX Location Data
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -17,12 +20,25 @@ function App() {
 
   const loadData = async () => {
     try {
-      setLoading(true)
-      const result = await fetchBusData()
-      setData(result)
+      // Don't set loading to true on every poll to prevent UI flicker
+      // only set if it's the initial load or explicit reload logic if needed
+      if (data.length === 0) setLoading(true)
+
+      // Parallel fetch: Crowding Data + Location Data
+      const [crowdResult, locationResult] = await Promise.all([
+        fetchBusData(),
+        fetchBusLocations('Taipei')
+      ]);
+
+      setData(crowdResult)
+      setLocations(locationResult)
+
       setLastUpdated(new Date().toLocaleTimeString('zh-TW'))
       setError(null)
     } catch (err) {
+      console.error("Data load error:", err);
+      // If one fails, we still want to show what we have if possible, 
+      // but for now let's just show error
       setError(err.message)
     } finally {
       setLoading(false)
@@ -36,14 +52,25 @@ function App() {
   }, [])
 
   // Enhanced filtering
+  // Filter both lists based on search
+  const normalize = (str) => String(str || '').toLowerCase();
+  const search = normalizeSearchText(filter.toLowerCase());
+
   const filteredData = data.filter(bus => {
-    const search = normalizeSearchText(filter.toLowerCase());
     return (
-      String(bus.RouteID || '').toLowerCase().includes(search) ||
-      String(bus.BusID || '').toLowerCase().includes(search) ||
-      String(bus.ProviderID || '').includes(search) ||
+      normalize(bus.RouteID).includes(search) ||
+      normalize(bus.BusID).includes(search) ||
+      normalize(bus.ProviderID).includes(search) ||
       getRouteName(bus.RouteID).toLowerCase().includes(search) ||
       getProviderName(bus.ProviderID).includes(search)
+    );
+  });
+
+  // Filter locations for map
+  const filteredLocations = locations.filter(bus => {
+    return (
+      normalize(bus.RouteName?.Zh_tw).includes(search) ||
+      normalize(bus.PlateNumb).includes(search)
     );
   });
 
@@ -65,6 +92,11 @@ function App() {
         setFilter={setFilter}
       />
 
+      {/* [NEW] Map Visualization */}
+      {locations.length > 0 && (
+        <BusMap busLocations={filteredLocations} />
+      )}
+
       {/* Error State */}
       {error && (
         <div style={{ color: 'var(--danger-color)', padding: '1rem', border: '1px solid var(--danger-color)', borderRadius: '8px', marginBottom: '1rem', backgroundColor: '#fee2e2' }}>
@@ -76,7 +108,7 @@ function App() {
       <BusTable data={filteredData} loading={loading} />
 
       <div style={{ marginTop: '3rem', fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-        資料來源: 臺北市資料大平臺 (Data.Taipei) | 自動更新: 每 20 秒
+        資料來源: 臺北市資料大平臺 (Data.Taipei) & TDX | 自動更新: 每 20 秒
       </div>
     </div>
   )
