@@ -101,8 +101,14 @@ function App() {
       );
     });
   }).map(location => {
-    // [NEW] Merge with Crowding Data
-    const crowding = data.find(d => d.BusID === location.PlateNumb);
+    // [NEW] Merge with Crowding Data (Normalize IDs for better matching)
+    const normalizeId = (id) => String(id || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+    const crowding = data.find(d => normalizeId(d.BusID) === normalizeId(location.PlateNumb));
+
+    // Debug log for first few items if missing
+    // if (!crowding && Math.random() < 0.01) console.log("Unmatched:", location.PlateNumb);
+
     return { ...location, CrowdingInfo: crowding };
   });
 
