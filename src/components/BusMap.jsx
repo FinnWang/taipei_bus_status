@@ -24,6 +24,27 @@ function MapUpdater({ center }) {
     return null;
 }
 
+// Helpers for popup
+const getCrowdingText = (info) => {
+    if (!info) return "無資料";
+    // Assuming Level: 0=Comfortable, 1=Normal, 2=Crowded, 3=Full
+    // If specific logic is unknown, we display raw or mapped
+    const levels = {
+        0: '舒適',
+        1: '普通',
+        2: '擁擠',
+        3: '客滿',
+        '-1': '無資料'
+    };
+    return levels[info.Level] || `等級 ${info.Level}`;
+};
+
+const getCrowdingColor = (level) => {
+    if (level === 2) return 'orange';
+    if (level >= 3) return 'red';
+    return 'green';
+};
+
 const BusMap = ({ busLocations }) => {
     // Default center: Taipei Main Station
     const defaultCenter = [25.0478, 121.5170];
@@ -58,6 +79,12 @@ const BusMap = ({ busLocations }) => {
                                         <p style={{ margin: '2px 0' }}><strong>車號:</strong> {bus.PlateNumb}</p>
                                         <p style={{ margin: '2px 0' }}><strong>往:</strong> {direction}</p>
                                         <p style={{ margin: '2px 0' }}><strong>速度:</strong> {speed}</p>
+
+                                        {/* [NEW] Crowding Display */}
+                                        <p style={{ margin: '2px 0', fontWeight: 'bold', color: getCrowdingColor(bus.CrowdingInfo?.Level) }}>
+                                            擁擠度: {getCrowdingText(bus.CrowdingInfo)}
+                                        </p>
+
                                         <p style={{ margin: '2px 0', fontSize: '0.8rem', color: '#666' }}>
                                             更新: {new Date(bus.SrcUpdateTime).toLocaleTimeString()}
                                         </p>

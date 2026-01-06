@@ -68,18 +68,25 @@ function App() {
   }, [])
 
   // Enhanced filtering
-  // Filter both lists based on search
+  // Filter both lists based on search (Support multi-term: "307 262")
   const normalize = (str) => String(str || '').toLowerCase();
-  const search = normalizeSearchText(filter.toLowerCase());
+
+  const searchTerms = filter.toLowerCase().split(/[\s,]+/).filter(Boolean);
 
   const filteredData = data.filter(bus => {
-    return (
-      normalize(bus.RouteID).includes(search) ||
-      normalize(bus.BusID).includes(search) ||
-      normalize(bus.ProviderID).includes(search) ||
-      getRouteName(bus.RouteID).toLowerCase().includes(search) ||
-      getProviderName(bus.ProviderID).includes(search)
-    );
+    if (searchTerms.length === 0) return true;
+
+    // OR logic: Show bus if it matches ANY of the search terms
+    return searchTerms.some(term => {
+      const s = normalizeSearchText(term);
+      return (
+        normalize(bus.RouteID).includes(s) ||
+        normalize(bus.BusID).includes(s) ||
+        normalize(bus.ProviderID).includes(s) ||
+        getRouteName(bus.RouteID).toLowerCase().includes(s) ||
+        getProviderName(bus.ProviderID).includes(s)
+      );
+    });
   });
 
   // Filter locations for map
@@ -88,6 +95,10 @@ function App() {
       normalize(bus.RouteName?.Zh_tw).includes(search) ||
       normalize(bus.PlateNumb).includes(search)
     );
+  }).map(location => {
+    // [NEW] Merge with Crowding Data
+    const crowding = data.find(d => d.BusID === location.PlateNumb);
+    return { ...location, CrowdingInfo: crowding };
   });
 
   return (

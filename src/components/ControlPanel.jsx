@@ -11,15 +11,15 @@ const ControlPanel = ({ loading, loadData, lastUpdated, filter, setFilter }) => 
             </span>
             <input
                 type="text"
-                placeholder="搜尋路線 (e.g. 307) 或車號..."
+                placeholder="搜尋路線 (例如: 307 262)..."
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 style={{
                     padding: '0.5rem',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    backgroundColor: 'var(--card-bg)',
-                    color: 'white',
+                    border: '1px solid #ccc',
+                    backgroundColor: '#fff',
+                    color: '#333',
                     width: '250px'
                 }}
             />
