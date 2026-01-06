@@ -91,10 +91,15 @@ function App() {
 
   // Filter locations for map
   const filteredLocations = locations.filter(bus => {
-    return (
-      normalize(bus.RouteName?.Zh_tw).includes(search) ||
-      normalize(bus.PlateNumb).includes(search)
-    );
+    if (searchTerms.length === 0) return true;
+
+    return searchTerms.some(term => {
+      const s = normalizeSearchText(term);
+      return (
+        normalize(bus.RouteName?.Zh_tw).includes(s) ||
+        normalize(bus.PlateNumb).includes(s)
+      );
+    });
   }).map(location => {
     // [NEW] Merge with Crowding Data
     const crowding = data.find(d => d.BusID === location.PlateNumb);
