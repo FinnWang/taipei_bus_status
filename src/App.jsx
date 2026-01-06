@@ -25,23 +25,39 @@ function App() {
       if (data.length === 0) setLoading(true)
 
       // Parallel fetch: Crowding Data + Location Data
-      const [crowdResult, locationResult] = await Promise.all([
+      const results = await Promise.allSettled([
         fetchBusData(),
         fetchBusLocations('Taipei')
       ]);
 
-      setData(crowdResult)
-      setLocations(locationResult)
+      const [crowdResult, locationResult] = results;
 
-      setLastUpdated(new Date().toLocaleTimeString('zh-TW'))
-      setError(null)
+      if (crowdResult.status === 'fulfilled') {
+        setData(crowdResult.value);
+      } else {
+        console.error("Crowd Data Error:", crowdResult.reason);
+        // We can choose to show a partial error or just log it
+      }
+
+      if (locationResult.status === 'fulfilled') {
+        setLocations(locationResult.value);
+      } else {
+        console.error("Location Data Error:", locationResult.reason);
+        // Don't kill the whole app, just set generic error for notification
+        setError(locationResult.reason?.message || "Location Data Unavailable");
+      }
+
+      setLastUpdated(new Date().toLocaleTimeString('zh-TW'));
+      // Only clear error if we got at least SOME data
+      if (crowdResult.status === 'fulfilled') {
+        setError(null);
+      }
+
     } catch (err) {
-      console.error("Data load error:", err);
-      // If one fails, we still want to show what we have if possible, 
-      // but for now let's just show error
-      setError(err.message)
+      console.error("Critical Data load error:", err);
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
